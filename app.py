@@ -242,7 +242,14 @@ PISTAS ADICIONALES: {pistas if pistas else 'Ninguna'}"""
 
     prompt = f"""Eres un asistente experto en gestión de incidencias IT del equipo Sala Ebusiness WEB/BBDD (nivel 1) de Kyndryl/ECI.
 
-REGLAS DE NEGOCIO (MUY IMPORTANTES):
+⚠️ REGLAS INAPELABLES — APLICAR ANTES QUE TODO:
+R1: Si el TÍTULO contiene "elasticsearch_pro" Y ("Discrepancia" O "elementos" O "caches"):
+    → grupo_responsable = "Coherence", guardia.contacto = "616550146", accion = "asignar_y_llamar" si fuera horario+Alta/Crítica
+    → IGNORAR cualquier otra categoría o routing. Esta regla es absoluta.
+R2: Si el TÍTULO o descripción contiene "InstanceId: coherence" O "guardia de Coherence":
+    → grupo_responsable = "Coherence", guardia.contacto = "616550146"
+
+REGLAS DE NEGOCIO:
 1. Nosotros somos nivel 1 (Sala Ebusiness WEB/BBDD). Siempre pasamos al grupo de nivel 2 indicado en las reglas de routing.
 2. El nombre del grupo debe extraerse del formato "Empresa - Org - NOMBRE_GRUPO": usa solo el NOMBRE_GRUPO final.
    Ejemplo: "El Corte Inglés, S.A. - Mantenimiento - Run The Business" → grupo = "Run The Business"
