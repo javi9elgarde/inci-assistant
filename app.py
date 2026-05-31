@@ -247,8 +247,8 @@ REGLAS DE NEGOCIO (MUY IMPORTANTES):
 5. CUANDO CATEGORÍA ES "Servicio sin identificar" O ESTÁ VACÍA:
    Ignora la categoría y busca pistas en el TÍTULO y la DESCRIPCIÓN.
    El título suele tener formato "eci#SISTEMA#descripcion" — el SISTEMA es la clave principal:
-   - "openshift", "openshift_pro", "kubernetes", "k8s", "prometheus", "collector" → grupo = "DevOps"
-   - "elastic", "elasticsearch", "kibana", "elk", "Attention" → grupo = "Elastic / ELK"
+   - "openshift", "openshift_pro", "kubernetes", "k8s", "prometheus", "collector", "devops" → grupo = "Devops" (El Corte Inglés, S.A. - Soporte Sistemas Corporativos - Devops)
+   - "elasticsearch", "elasticsearch_pro", "elastic", "kibana", "elk", "Attention" → grupo = "Devops" (también gestionado por Devops en ECI)
    - "mxcpd", "linux", "CPU", "UNIXOVERALL", "mongod", "mongo", "disk", "space" → grupo de infraestructura Linux/Unix
    - "oracle", "bbdd", "database", "sql", "ORA-" → grupo DBA
    - "kafka", "rabbit", "broker", "WMB", "sterling" → grupo de integración/mensajería
