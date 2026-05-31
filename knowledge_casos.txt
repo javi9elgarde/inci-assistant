@@ -1,0 +1,27 @@
+# CASOS ESPECÍFICOS CON PROCEDIMIENTO FIJO
+# Formato: si el título o descripción contiene las palabras clave → acción exacta
+# Estos casos tienen prioridad absoluta sobre cualquier otra regla
+
+================================================================================
+CASO: Discrepancia caches Coherence
+================================================================================
+DETECTAR SI: título contiene "elasticsearch_pro" AND ("Discrepancia" OR "elementos" OR "caches")
+             O descripción contiene "coherence" OR "InstanceId: coherence" OR "guardia de Coherence"
+GRUPO: Coherence
+TELÉFONO GUARDIA: 616550146
+ACCIÓN SIEMPRE: Revisar Kibana antes de llamar:
+  https://kibana.eci.geci/s/coherence-logs/app/discover#/?_g=(filters:!(),refreshInterval:(pause:!f,value:60000),time:(from:now-1h,to:now))&_a=(columns:!(),dataSource:(dataViewId:'7aa95fdd-4d48-54f3-90a9-c466f0af8954',type:dataView),filters:!(),interval:auto,query:(language:lucene,query:'%22Incorrect%20number%20of%20elements%22'),sort:!(!('@timestamp',desc)))
+  Si hay errores en Kibana → llamar al 616550146 (guardia Coherence)
+NOTAS: La descripción suele indicar explícitamente "Llamar a la guardia de Coherence"
+
+================================================================================
+CASO: OpenShift pod restarting / CrashLoopBackOff
+================================================================================
+DETECTAR SI: título contiene "openshift" AND ("restarting" OR "CrashLoop" OR "restart")
+GRUPO: Devops
+TELÉFONO GUARDIA: (pendiente - añadir)
+ACCIÓN: Revisar estado del pod en OpenShift y escalar a Devops
+
+================================================================================
+# AÑADIR MÁS CASOS AQUÍ
+================================================================================

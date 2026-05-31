@@ -118,6 +118,15 @@ def load_routing_matrix():
     return ""
 
 
+def load_casos_especificos():
+    """Carga casos específicos con procedimiento fijo (máxima prioridad)."""
+    path = os.path.join(os.path.dirname(__file__), "knowledge_casos.txt")
+    if os.path.exists(path):
+        with open(path, encoding="utf-8") as f:
+            return f.read()
+    return ""
+
+
 def load_knowledge_base():
     docs = []
     patterns = ["**/*.docx", "**/*.pdf", "**/*.txt", "**/*.md"]
@@ -209,7 +218,10 @@ def analyze():
         # Sin categoría, enviar solo las primeras 80 líneas como muestra
         relevant_rows = routing_matrix.splitlines()[:80]
 
+    casos_especificos = load_casos_especificos()
     docs_context = ""
+    if casos_especificos:
+        docs_context += f"\n\nCASOS ESPECÍFICOS CON PROCEDIMIENTO FIJO (PRIORIDAD MÁXIMA — aplicar antes que cualquier otra regla):\n{casos_especificos}"
     if relevant_rows:
         docs_context += f"\n\nREGLAS DE ROUTING RELEVANTES (del Excel de categorizaciones):\n" + "\n".join(relevant_rows)
     if not docs_context:
