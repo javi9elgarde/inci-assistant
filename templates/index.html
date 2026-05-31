@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Asistente de Incidencias</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --border: #2e3250;
+    --accent: #4f6ef7;
+    --accent2: #7c5ef7;
+    --green: #22c55e;
+    --yellow: #f59e0b;
+    --red: #ef4444;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* HEADER */
+  header {
+    padding: 18px 32px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+  }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .logo-text { font-size: 17px; font-weight: 600; letter-spacing: -0.3px; }
+  .logo-sub { font-size: 12px; color: var(--muted); }
+
+  #status-bar {
+    display: flex; align-items: center; gap: 12px; font-size: 13px;
+  }
+  #horario-badge {
+    padding: 4px 10px; border-radius: 20px; font-weight: 600; font-size: 12px;
+  }
+  .badge-oficina { background: #14532d; color: var(--green); }
+  .badge-guardia { background: #7c2d12; color: #fb923c; }
+  #key-btn {
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--muted); padding: 5px 12px; border-radius: 8px;
+    cursor: pointer; font-size: 12px; transition: all 0.2s;
+  }
+  #key-btn:hover { border-color: var(--accent); color: var(--text); }
+
+  /* LAYOUT */
+  main {
+    flex: 1; display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    max-width: 1400px; margin: 0 auto; width: 100%; padding: 28px;
+    gap: 20px;
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    display: flex; flex-direction: column; gap: 18px;
+  }
+  .panel-title {
+    font-size: 14px; font-weight: 600; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.8px;
+  }
+
+  /* FORM */
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  label { font-size: 13px; color: var(--muted); font-weight: 500; }
+  input, textarea, select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 10px 14px;
+    font-size: 14px;
+    font-family: inherit;
+    transition: border-color 0.2s;
+    resize: vertical;
+  }
+  input:focus, textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  textarea { min-height: 100px; }
+  #descripcion { min-height: 160px; }
+  #comentarios { min-height: 80px; }
+
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  #analyze-btn {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none; border-radius: 10px;
+    color: white; font-size: 15px; font-weight: 600;
+    padding: 14px; cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  #analyze-btn:hover { opacity: 0.9; }
+  #analyze-btn:active { transform: scale(0.98); }
+  #analyze-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .clear-btn {
+    background: none; border: 1px solid var(--border);
+    border-radius: 8px; color: var(--muted);
+    padding: 8px 16px; cursor: pointer; font-size: 13px;
+    transition: all 0.2s;
+  }
+  .clear-btn:hover { border-color: var(--red); color: var(--red); }
+
+  /* RESULTADO */
+  #result-panel { position: relative; }
+  #result-empty {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    color: var(--muted); gap: 12px; text-align: center;
+  }
+  #result-empty .big-icon { font-size: 48px; opacity: 0.3; }
+  #result-content { display: none; flex-direction: column; gap: 16px; }
+
+  .result-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px;
+  }
+  .result-card-title {
+    font-size: 11px; font-weight: 600; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px;
+  }
+  .result-card-value { font-size: 15px; font-weight: 600; }
+
+  .grupo-card { border-left: 3px solid var(--accent); }
+  .guardia-card { border-left: 3px solid #f59e0b; }
+  .resolucion-card { border-left: 3px solid var(--green); }
+  .diagnostico-card { border-left: 3px solid var(--accent2); }
+
+  .confianza-badge {
+    display: inline-block; padding: 2px 8px;
+    border-radius: 20px; font-size: 11px; font-weight: 600;
+    margin-left: 8px;
+  }
+  .conf-alta { background: #14532d; color: var(--green); }
+  .conf-media { background: #713f12; color: var(--yellow); }
+  .conf-baja { background: #450a0a; color: var(--red); }
+
+  .pasos-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  .pasos-list li {
+    display: flex; gap: 10px; align-items: flex-start;
+    font-size: 14px; line-height: 1.5;
+  }
+  .paso-num {
+    background: var(--accent); color: white;
+    border-radius: 50%; width: 20px; height: 20px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 2px;
+  }
+
+  .no-resolucion {
+    color: var(--yellow); font-size: 14px;
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  #loading {
+    display: none; flex-direction: column;
+    align-items: center; justify-content: center;
+    flex: 1; gap: 16px;
+  }
+  .spinner {
+    width: 40px; height: 40px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .hora-consulta {
+    font-size: 11px; color: var(--muted);
+    text-align: right; margin-top: -8px;
+  }
+
+  /* MODAL API KEY */
+  #modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7); z-index: 100;
+    align-items: center; justify-content: center;
+  }
+  #modal-overlay.open { display: flex; }
+  #modal {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 32px; width: 420px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  #modal h2 { font-size: 18px; }
+  #modal p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+  #modal input { width: 100%; font-family: monospace; }
+  .modal-btns { display: flex; gap: 8px; justify-content: flex-end; }
+  .modal-btns button {
+    padding: 8px 20px; border-radius: 8px; cursor: pointer;
+    font-size: 14px; font-weight: 600; border: none;
+  }
+  #modal-cancel { background: var(--surface2); color: var(--muted); }
+  #modal-save { background: var(--accent); color: white; }
+
+  /* DOCS INFO */
+  #docs-info {
+    font-size: 12px; color: var(--muted);
+    padding: 8px 12px; background: var(--surface2);
+    border-radius: 8px; border: 1px solid var(--border);
+    display: flex; align-items: center; gap: 6px;
+  }
+  #docs-count { font-weight: 600; color: var(--text); }
+
+  .error-card {
+    background: #450a0a; border: 1px solid #7f1d1d;
+    border-radius: 10px; padding: 16px; color: var(--red);
+    font-size: 14px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">⚡</div>
+    <div>
+      <div class="logo-text">Asistente de Incidencias</div>
+      <div class="logo-sub">EasyWEB · Kyndryl</div>
+    </div>
+  </div>
+  <div id="status-bar">
+    <div id="horario-badge">—</div>
+    <div id="docs-info">
+      <span>Docs:</span> <span id="docs-count">—</span>
+    </div>
+    <button id="key-btn" onclick="openModal()">API Key</button>
+  </div>
+</header>
+
+<main>
+  <!-- FORMULARIO -->
+  <div class="panel">
+    <div class="panel-title">Datos de la Incidencia</div>
+
+    <div class="field">
+      <label>Título / Resumen</label>
+      <input type="text" id="titulo" placeholder="ej. CPU load is high on UNIXOVERALLCPU...">
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label>Servicio</label>
+        <input type="text" id="servicio" placeholder="ej. eCommerce Especialista">
+      </div>
+      <div class="field">
+        <label>Categoría</label>
+        <input type="text" id="categoria" placeholder="ej. Infraestructura / LINUX">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Descripción (lo más importante)</label>
+      <textarea id="descripcion" placeholder="Pega aquí el contenido completo de la descripción de la incidencia..."></textarea>
+    </div>
+
+    <div class="field">
+      <label>Comentarios / Actividad previa <span style="color:var(--muted)">(opcional)</span></label>
+      <textarea id="comentarios" placeholder="Si hay comentarios relevantes de otros grupos o técnicos, pégalos aquí..."></textarea>
+    </div>
+
+    <div style="display:flex; gap:10px; margin-top:4px;">
+      <button id="analyze-btn" onclick="analyze()">
+        <span id="btn-icon">⚡</span>
+        <span id="btn-text">Analizar Incidencia</span>
+      </button>
+      <button class="clear-btn" onclick="clearForm()">Limpiar</button>
+    </div>
+  </div>
+
+  <!-- RESULTADO -->
+  <div class="panel" id="result-panel">
+    <div class="panel-title">Análisis</div>
+
+    <div id="result-empty">
+      <div class="big-icon">🔍</div>
+      <div>Introduce los datos de la incidencia<br>y pulsa <strong>Analizar</strong></div>
+    </div>
+
+    <div id="loading">
+      <div class="spinner"></div>
+      <div style="color:var(--muted); font-size:14px;">Analizando incidencia...</div>
+    </div>
+
+    <div id="result-content"></div>
+  </div>
+</main>
+
+<!-- MODAL API KEY -->
+<div id="modal-overlay">
+  <div id="modal">
+    <h2>Configurar API Key</h2>
+    <p>Necesitas una API key de Anthropic para usar el asistente. Se guarda localmente en tu carpeta del proyecto y nunca sale de tu máquina.</p>
+    <div class="field">
+      <label>API Key</label>
+      <input type="password" id="api-key-input" placeholder="sk-ant-...">
+    </div>
+    <div class="modal-btns">
+      <button id="modal-cancel" onclick="closeModal()">Cancelar</button>
+      <button id="modal-save" onclick="saveKey()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const WORK_START = 8, WORK_END = 18;
+
+function updateHorario() {
+  const now = new Date();
+  const h = now.getHours(), d = now.getDay();
+  const enHorario = d >= 1 && d <= 5 && h >= WORK_START && h < WORK_END;
+  const badge = document.getElementById('horario-badge');
+  const dias = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  const hora = now.toTimeString().slice(0,5);
+  badge.textContent = enHorario ? `🟢 Horario oficina · ${dias[d]} ${hora}` : `🟠 Fuera horario · ${dias[d]} ${hora}`;
+  badge.className = enHorario ? 'badge-oficina' : 'badge-guardia';
+}
+
+async function loadDocsStatus() {
+  try {
+    const r = await fetch('/api/docs-status');
+    const data = await r.json();
+    const el = document.getElementById('docs-count');
+    if (data.docs.length === 0) {
+      el.textContent = 'Sin docs';
+      el.style.color = 'var(--muted)';
+    } else {
+      el.textContent = `${data.docs.length} archivo${data.docs.length > 1 ? 's' : ''}`;
+      el.style.color = 'var(--green)';
+    }
+  } catch(e) {}
+}
+
+async function checkKey() {
+  try {
+    const r = await fetch('/api/check-key');
+    const data = await r.json();
+    if (!data.has_key) openModal();
+  } catch(e) {}
+}
+
+function openModal() {
+  document.getElementById('modal-overlay').classList.add('open');
+  document.getElementById('api-key-input').focus();
+}
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+async function saveKey() {
+  const key = document.getElementById('api-key-input').value.trim();
+  if (!key) return;
+  await fetch('/api/save-key', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({key})
+  });
+  closeModal();
+}
+
+function clearForm() {
+  ['titulo','servicio','categoria','descripcion','comentarios'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  showEmpty();
+}
+
+function showEmpty() {
+  document.getElementById('result-empty').style.display = 'flex';
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('result-content').style.display = 'none';
+}
+
+function showLoading() {
+  document.getElementById('result-empty').style.display = 'none';
+  document.getElementById('loading').style.display = 'flex';
+  document.getElementById('result-content').style.display = 'none';
+}
+
+function showResult(data) {
+  document.getElementById('result-empty').style.display = 'none';
+  document.getElementById('loading').style.display = 'none';
+  const rc = document.getElementById('result-content');
+  rc.style.display = 'flex';
+
+  if (data.error) {
+    rc.innerHTML = `<div class="error-card">❌ ${data.error}</div>`;
+    return;
+  }
+
+  const confClass = {'alta':'conf-alta','media':'conf-media','baja':'conf-baja'}[data.confianza_grupo] || 'conf-baja';
+
+  let guardiaHtml = '';
+  if (data.fuera_horario) {
+    if (data.guardia?.aplica) {
+      guardiaHtml = `
+        <div class="result-card guardia-card">
+          <div class="result-card-title">Guardia</div>
+          <div class="result-card-value">📞 ${data.guardia.nombre || 'Guardia activa'}</div>
+          ${data.guardia.contacto ? `<div style="margin-top:6px;font-size:14px;color:#fb923c;font-weight:600;">${data.guardia.contacto}</div>` : ''}
+        </div>`;
+    } else {
+      guardiaHtml = `
+        <div class="result-card guardia-card">
+          <div class="result-card-title">Guardia</div>
+          <div class="result-card-value" style="color:var(--yellow)">⚠️ Fuera de horario — verificar guardia en documentación</div>
+        </div>`;
+    }
+  }
+
+  let pasosHtml = '';
+  if (data.puede_resolver && data.pasos_resolucion?.length) {
+    const items = data.pasos_resolucion.map((p, i) =>
+      `<li><span class="paso-num">${i+1}</span><span>${p}</span></li>`
+    ).join('');
+    pasosHtml = `<ul class="pasos-list">${items}</ul>`;
+  } else {
+    pasosHtml = `<div class="no-resolucion">⚠️ No se puede resolver directamente — se recomienda escalado</div>`;
+  }
+
+  let escaladoHtml = data.escalado_recomendado
+    ? `<div style="margin-top:10px;font-size:13px;color:var(--muted);">Escalar a: <strong style="color:var(--text)">${data.escalado_recomendado}</strong></div>`
+    : '';
+
+  rc.innerHTML = `
+    <div class="hora-consulta">${data.hora_consulta || ''}</div>
+
+    <div class="result-card grupo-card">
+      <div class="result-card-title">Grupo Responsable</div>
+      <div class="result-card-value">
+        ${data.grupo_responsable}
+        <span class="confianza-badge ${confClass}">${data.confianza_grupo}</span>
+      </div>
+    </div>
+
+    ${guardiaHtml}
+
+    <div class="result-card diagnostico-card">
+      <div class="result-card-title">Diagnóstico</div>
+      <div style="font-size:14px;line-height:1.6;">${data.resumen_diagnostico}</div>
+    </div>
+
+    <div class="result-card resolucion-card">
+      <div class="result-card-title">Resolución</div>
+      ${pasosHtml}
+      ${escaladoHtml}
+    </div>
+
+    ${data.notas_adicionales ? `
+    <div class="result-card">
+      <div class="result-card-title">Notas adicionales</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.6;">${data.notas_adicionales}</div>
+    </div>` : ''}
+  `;
+}
+
+async function analyze() {
+  const titulo = document.getElementById('titulo').value;
+  const descripcion = document.getElementById('descripcion').value;
+  if (!titulo && !descripcion) {
+    alert('Introduce al menos el título o la descripción');
+    return;
+  }
+  const btn = document.getElementById('analyze-btn');
+  btn.disabled = true;
+  document.getElementById('btn-text').textContent = 'Analizando...';
+  showLoading();
+
+  try {
+    const r = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        titulo,
+        descripcion,
+        servicio: document.getElementById('servicio').value,
+        categoria: document.getElementById('categoria').value,
+        comentarios: document.getElementById('comentarios').value,
+      })
+    });
+    const data = await r.json();
+    showResult(data);
+  } catch(e) {
+    showResult({error: 'Error de conexión con el servidor'});
+  } finally {
+    btn.disabled = false;
+    document.getElementById('btn-text').textContent = 'Analizar Incidencia';
+  }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+  if (e.ctrlKey && e.key === 'Enter') analyze();
+});
+
+updateHorario();
+setInterval(updateHorario, 30000);
+loadDocsStatus();
+checkKey();
+</script>
+</body>
+</html>
