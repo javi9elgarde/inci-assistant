@@ -6,6 +6,11 @@ from flask import Flask, render_template, request, jsonify
 from groq import Groq
 import docx
 import PyPDF2
+try:
+    import openpyxl
+    HAS_OPENPYXL = True
+except ImportError:
+    HAS_OPENPYXL = False
 
 app = Flask(__name__)
 
@@ -66,6 +71,33 @@ def read_txt(path):
         return ""
 
 
+def build_category_tree():
+    """Construye el árbol N1>N2>N3 desde el Excel."""
+    xlsx = os.path.join(os.path.dirname(__file__), "docs", "CategorizacionesIncidenciaseCommerceOK.xlsx")
+    if not HAS_OPENPYXL or not os.path.exists(xlsx):
+        return {}
+    try:
+        wb = openpyxl.load_workbook(xlsx, read_only=True, data_only=True)
+        ws = wb['CategorizacioneseCommerce']
+        tree = {}
+        for row in ws.iter_rows(min_row=6, max_row=831, min_col=2, max_col=5, values_only=True):
+            b, c, d, e = row
+            if not b:
+                continue
+            n1 = str(b).strip()
+            n2 = str(c).strip() if c else ''
+            n3 = str(d).strip() if d else ''
+            if n1 not in tree:
+                tree[n1] = {}
+            if n2 and n2 not in tree[n1]:
+                tree[n1][n2] = []
+            if n2 and n3 and n3 not in tree[n1][n2]:
+                tree[n1][n2].append(n3)
+        return tree
+    except Exception:
+        return {}
+
+
 def load_routing_matrix():
     """Carga la matriz de routing del Excel convertida a texto."""
     path = os.path.join(os.path.dirname(__file__), "knowledge.txt")
@@ -114,6 +146,12 @@ def save_key():
     return jsonify({"ok": True})
 
 
+@app.route("/api/categories", methods=["GET"])
+def categories():
+    tree = build_category_tree()
+    return jsonify(tree)
+
+
 @app.route("/api/docs-status", methods=["GET"])
 def docs_status():
     docs = []
@@ -131,13 +169,16 @@ def analyze():
 
     data = request.json
     titulo = data.get("titulo", "").strip()
-    descripcion = data.get("descripcion", "").strip()
     servicio = data.get("servicio", "").strip()
-    categoria = data.get("categoria", "").strip()
-    comentarios = data.get("comentarios", "").strip()
+    cat_n1 = data.get("cat_n1", "").strip()
+    cat_n2 = data.get("cat_n2", "").strip()
+    cat_n3 = data.get("cat_n3", "").strip()
+    pistas = data.get("pistas", "").strip()
 
-    if not titulo and not descripcion:
-        return jsonify({"error": "Introduce al menos título o descripción"}), 400
+    cat_operacional = " > ".join(filter(None, [cat_n1, cat_n2, cat_n3]))
+
+    if not titulo and not cat_operacional:
+        return jsonify({"error": "Introduce al menos el título o la categoría operacional"}), 400
 
     fuera_horario = not is_office_hours()
     now = datetime.now()
@@ -156,11 +197,9 @@ def analyze():
         docs_context = "\n\n[Sin matriz de routing cargada. Usa conocimiento general.]"
 
     incidencia_text = f"""TÍTULO: {titulo}
-SERVICIO/CATEGORÍA: {servicio} / {categoria}
-DESCRIPCIÓN:
-{descripcion}
-COMENTARIOS PREVIOS:
-{comentarios if comentarios else 'Ninguno'}"""
+SERVICIO: {servicio}
+CATEGORÍA OPERACIONAL: {cat_operacional}
+PISTAS ADICIONALES: {pistas if pistas else 'Ninguna'}"""
 
     horario_text = (
         f"HORARIO: Fuera de horario de oficina ({dia_semana} {hora_actual}). "

@@ -265,28 +265,39 @@
 
     <div class="field">
       <label>Título / Resumen</label>
-      <input type="text" id="titulo" placeholder="ej. CPU load is high on UNIXOVERALLCPU...">
+      <input type="text" id="titulo" placeholder="ej. Incidencia en Web Mi Cuenta">
+    </div>
+
+    <div class="field">
+      <label>Servicio</label>
+      <input type="text" id="servicio" placeholder="ej. Mi Cuenta, eCommerce Especialista...">
+    </div>
+
+    <div class="field">
+      <label>Categoría Operacional — Nivel 1</label>
+      <select id="cat_n1" onchange="onN1Change()">
+        <option value="">— Selecciona nivel 1 —</option>
+      </select>
     </div>
 
     <div class="row">
       <div class="field">
-        <label>Servicio</label>
-        <input type="text" id="servicio" placeholder="ej. eCommerce Especialista">
+        <label>Nivel 2</label>
+        <select id="cat_n2" onchange="onN2Change()" disabled>
+          <option value="">— Nivel 2 —</option>
+        </select>
       </div>
       <div class="field">
-        <label>Categoría</label>
-        <input type="text" id="categoria" placeholder="ej. Infraestructura / LINUX">
+        <label>Nivel 3</label>
+        <select id="cat_n3" disabled>
+          <option value="">— Nivel 3 —</option>
+        </select>
       </div>
     </div>
 
     <div class="field">
-      <label>Descripción (lo más importante)</label>
-      <textarea id="descripcion" placeholder="Pega aquí el contenido completo de la descripción de la incidencia..."></textarea>
-    </div>
-
-    <div class="field">
-      <label>Comentarios / Actividad previa <span style="color:var(--muted)">(opcional)</span></label>
-      <textarea id="comentarios" placeholder="Si hay comentarios relevantes de otros grupos o técnicos, pégalos aquí..."></textarea>
+      <label>Pistas adicionales <span style="color:var(--muted)">(opcional)</span></label>
+      <textarea id="pistas" style="min-height:70px" placeholder="Algo que llame la atención en la descripción, comentarios previos, etc..."></textarea>
     </div>
 
     <div style="display:flex; gap:10px; margin-top:4px;">
@@ -334,6 +345,50 @@
 
 <script>
 const WORK_START = 8, WORK_END = 18;
+let categoryTree = {};
+
+async function loadCategories() {
+  try {
+    const r = await fetch('/api/categories');
+    categoryTree = await r.json();
+    const sel = document.getElementById('cat_n1');
+    Object.keys(categoryTree).sort().forEach(n1 => {
+      const opt = document.createElement('option');
+      opt.value = n1; opt.textContent = n1;
+      sel.appendChild(opt);
+    });
+  } catch(e) {}
+}
+
+function onN1Change() {
+  const n1 = document.getElementById('cat_n1').value;
+  const sel2 = document.getElementById('cat_n2');
+  const sel3 = document.getElementById('cat_n3');
+  sel2.innerHTML = '<option value="">— Nivel 2 —</option>';
+  sel3.innerHTML = '<option value="">— Nivel 3 —</option>';
+  sel2.disabled = !n1;
+  sel3.disabled = true;
+  if (!n1) return;
+  Object.keys(categoryTree[n1] || {}).sort().forEach(n2 => {
+    const opt = document.createElement('option');
+    opt.value = n2; opt.textContent = n2;
+    sel2.appendChild(opt);
+  });
+}
+
+function onN2Change() {
+  const n1 = document.getElementById('cat_n1').value;
+  const n2 = document.getElementById('cat_n2').value;
+  const sel3 = document.getElementById('cat_n3');
+  sel3.innerHTML = '<option value="">— Nivel 3 —</option>';
+  sel3.disabled = !n2;
+  if (!n1 || !n2) return;
+  (categoryTree[n1]?.[n2] || []).forEach(n3 => {
+    const opt = document.createElement('option');
+    opt.value = n3; opt.textContent = n3;
+    sel3.appendChild(opt);
+  });
+}
 
 function updateHorario() {
   const now = new Date();
@@ -388,9 +443,11 @@ async function saveKey() {
 }
 
 function clearForm() {
-  ['titulo','servicio','categoria','descripcion','comentarios'].forEach(id => {
+  ['titulo','servicio','pistas'].forEach(id => {
     document.getElementById(id).value = '';
   });
+  document.getElementById('cat_n1').value = '';
+  onN1Change();
   showEmpty();
 }
 
@@ -485,9 +542,9 @@ function showResult(data) {
 
 async function analyze() {
   const titulo = document.getElementById('titulo').value;
-  const descripcion = document.getElementById('descripcion').value;
-  if (!titulo && !descripcion) {
-    alert('Introduce al menos el título o la descripción');
+  const n1 = document.getElementById('cat_n1').value;
+  if (!titulo && !n1) {
+    alert('Introduce al menos el título o la categoría operacional');
     return;
   }
   const btn = document.getElementById('analyze-btn');
@@ -501,10 +558,11 @@ async function analyze() {
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
         titulo,
-        descripcion,
         servicio: document.getElementById('servicio').value,
-        categoria: document.getElementById('categoria').value,
-        comentarios: document.getElementById('comentarios').value,
+        cat_n1: document.getElementById('cat_n1').value,
+        cat_n2: document.getElementById('cat_n2').value,
+        cat_n3: document.getElementById('cat_n3').value,
+        pistas: document.getElementById('pistas').value,
       })
     });
     const data = await r.json();
@@ -526,6 +584,7 @@ updateHorario();
 setInterval(updateHorario, 30000);
 loadDocsStatus();
 checkKey();
+loadCategories();
 </script>
 </body>
 </html>
