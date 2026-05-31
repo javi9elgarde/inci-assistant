@@ -66,6 +66,15 @@ def read_txt(path):
         return ""
 
 
+def load_routing_matrix():
+    """Carga la matriz de routing del Excel convertida a texto."""
+    path = os.path.join(os.path.dirname(__file__), "knowledge.txt")
+    if os.path.exists(path):
+        with open(path, encoding="utf-8") as f:
+            return f.read()
+    return ""
+
+
 def load_knowledge_base():
     docs = []
     patterns = ["**/*.docx", "**/*.pdf", "**/*.txt", "**/*.md"]
@@ -135,9 +144,16 @@ def analyze():
     hora_actual = now.strftime("%H:%M")
     dia_semana = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"][now.weekday()]
 
+    routing_matrix = load_routing_matrix()
     knowledge = load_knowledge_base()
-    docs_context = f"\n\nCONOCIMIENTO BASE (documentación interna):\n{knowledge}" if knowledge else \
-        "\n\n[No hay documentación cargada en la carpeta /docs. Responde con el conocimiento general disponible.]"
+
+    docs_context = ""
+    if routing_matrix:
+        docs_context += f"\n\nMATRIZ DE ROUTING (usa esto como referencia principal para asignar grupos):\n{routing_matrix}"
+    if knowledge:
+        docs_context += f"\n\nDOCUMENTACIÓN ADICIONAL:\n{knowledge}"
+    if not docs_context:
+        docs_context = "\n\n[Sin matriz de routing cargada. Usa conocimiento general.]"
 
     incidencia_text = f"""TÍTULO: {titulo}
 SERVICIO/CATEGORÍA: {servicio} / {categoria}
