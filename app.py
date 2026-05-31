@@ -245,14 +245,18 @@ REGLAS DE NEGOCIO (MUY IMPORTANTES):
    - Fuera de horario + Alta/Crítica → pasar directamente al subgrupo específico.
    - Resto → pasar a "Run The Business".
 5. CUANDO CATEGORÍA ES "Servicio sin identificar" O ESTÁ VACÍA:
-   Ignora la categoría y busca pistas en el TÍTULO y la DESCRIPCIÓN:
-   - "openshift", "kubernetes", "k8s", "prometheus", "collector", "devops" → grupo = "DevOps / OpenShift"
-   - "elastic", "elasticsearch", "kibana", "ELK" → grupo = "Elastic / Monitorización"
-   - "linux", "CPU", "memoria", "disco", "mongod", "mongo" → grupo de infraestructura Unix/Linux
-   - "oracle", "bbdd", "database", "sql" → grupo DBA
-   - "kafka", "rabbit", "broker", "WMB" → grupo de integración/mensajería
-   - Si el título contiene "InstanceId: XXXX" o "Component: XXXX", ese XXXX indica el sistema afectado
-   - Usa el contexto del título completo para deducir el grupo más apropiado
+   Ignora la categoría y busca pistas en el TÍTULO y la DESCRIPCIÓN.
+   El título suele tener formato "eci#SISTEMA#descripcion" — el SISTEMA es la clave principal:
+   - "openshift", "openshift_pro", "kubernetes", "k8s", "prometheus", "collector" → grupo = "DevOps"
+   - "elastic", "elasticsearch", "kibana", "elk", "Attention" → grupo = "Elastic / ELK"
+   - "mxcpd", "linux", "CPU", "UNIXOVERALL", "mongod", "mongo", "disk", "space" → grupo de infraestructura Linux/Unix
+   - "oracle", "bbdd", "database", "sql", "ORA-" → grupo DBA
+   - "kafka", "rabbit", "broker", "WMB", "sterling" → grupo de integración/mensajería
+   - "appdynamics", "dynatrace", "nagios", "monitoring" → grupo de monitorización
+   - "nav++", "appeci", "firefly" → grupo Run The Business / eCommerce web
+   - Si la descripción contiene "InstanceId: devops" o "Component: openshift" → ese valor indica el grupo
+   - Si la descripción contiene "InstanceId: ELASTIC" o "InstanceId: ELK" → Elastic
+   - Analiza TODAS las pistas disponibles y elige el grupo más específico posible
 
 Responde SIEMPRE en este formato JSON exacto (sin markdown, solo JSON puro):
 {{
