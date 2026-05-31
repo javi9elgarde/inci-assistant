@@ -170,12 +170,14 @@ def analyze():
     data = request.json
     titulo = data.get("titulo", "").strip()
     servicio = data.get("servicio", "").strip()
+    criticidad = data.get("criticidad", "").strip()
     cat_n1 = data.get("cat_n1", "").strip()
     cat_n2 = data.get("cat_n2", "").strip()
     cat_n3 = data.get("cat_n3", "").strip()
     pistas = data.get("pistas", "").strip()
 
     cat_operacional = " > ".join(filter(None, [cat_n1, cat_n2, cat_n3]))
+    es_alta_critica = criticidad in ["Alta", "Crítica"]
 
     if not titulo and not cat_operacional:
         return jsonify({"error": "Introduce al menos el título o la categoría operacional"}), 400
@@ -204,6 +206,7 @@ def analyze():
 
     incidencia_text = f"""TÍTULO: {titulo}
 SERVICIO: {servicio}
+CRITICIDAD: {criticidad if criticidad else 'No especificada'}
 CATEGORÍA OPERACIONAL: {cat_operacional}
 PISTAS ADICIONALES: {pistas if pistas else 'Ninguna'}"""
 
@@ -214,26 +217,42 @@ PISTAS ADICIONALES: {pistas if pistas else 'Ninguna'}"""
         f"HORARIO: Dentro de horario de oficina ({dia_semana} {hora_actual})."
     )
 
-    prompt = f"""Eres un asistente experto en gestión de incidencias IT para el equipo de Kyndryl/ECI (El Corte Inglés).
-Analiza la siguiente incidencia y responde SIEMPRE en este formato JSON exacto (sin markdown, solo JSON puro):
+    prompt = f"""Eres un asistente experto en gestión de incidencias IT del equipo Sala Ebusiness WEB/BBDD (nivel 1) de Kyndryl/ECI.
 
+REGLAS DE NEGOCIO (MUY IMPORTANTES):
+1. Nosotros somos nivel 1 (Sala Ebusiness WEB/BBDD). Siempre pasamos al grupo de nivel 2 indicado en las reglas de routing.
+2. El nombre del grupo debe extraerse del formato "Empresa - Org - NOMBRE_GRUPO": usa solo el NOMBRE_GRUPO final.
+   Ejemplo: "El Corte Inglés, S.A. - Mantenimiento - Run The Business" → grupo = "Run The Business"
+   Ejemplo: "Hiberus Digital Business, S.L. - Mantenimiento - Soporte Customer Experience" → grupo = "Soporte Customer Experience"
+3. LÓGICA DE HORARIO Y CRITICIDAD:
+   - DENTRO de horario de oficina (L-V 8:00-18:00): SIEMPRE asignar al grupo sin llamar, sea la criticidad que sea.
+   - FUERA de horario (tardes +18h, fines de semana, festivos):
+     * Si criticidad es Alta o Crítica: asignar Y avisar/llamar al grupo.
+     * Si criticidad es Media o Baja: solo asignar, NO llamar.
+4. Grupos que pertenecen a "Run The Business" (en horario o si no es Alta/Crítica, se pasa a Run The Business en vez del subgrupo):
+   Soporte Customer Experience, Soporte Firefly Checkout, Soporte Cesta-Checkout, Front Cesta-Checkout, y similares de ECI/Accenture/Hiberus relacionados con web ecommerce.
+   - Fuera de horario + Alta/Crítica → pasar directamente al subgrupo específico.
+   - Resto → pasar a "Run The Business".
+
+Responde SIEMPRE en este formato JSON exacto (sin markdown, solo JSON puro):
 {{
-  "grupo_responsable": "Nombre del grupo que debe gestionar la incidencia",
+  "grupo_responsable": "Nombre limpio del grupo de nivel 2",
+  "grupo_via": "Run The Business (si aplica la regla) o null",
   "confianza_grupo": "alta|media|baja",
   "fuera_horario": true,
+  "accion": "asignar_y_llamar | solo_asignar",
+  "motivo_accion": "Explicación breve de por qué llamar o no",
   "guardia": {{
     "aplica": true,
     "nombre": "Nombre del servicio de guardia o null",
-    "contacto": "Número o contacto o null"
+    "contacto": "Número o contacto si lo conoces, si no null"
   }},
-  "puede_resolver": true,
-  "pasos_resolucion": ["paso 1", "paso 2"],
-  "resumen_diagnostico": "Explicación breve de qué está pasando y por qué",
-  "escalado_recomendado": "A quién escalar si no se resuelve, o null",
+  "resumen_diagnostico": "Qué está pasando según la categoría y pistas",
   "notas_adicionales": "Cualquier info relevante adicional o null"
 }}
 
 {horario_text}
+CRITICIDAD DE LA INCIDENCIA: {criticidad if criticidad else 'No especificada'}
 
 INCIDENCIA A ANALIZAR:
 {incidencia_text}
