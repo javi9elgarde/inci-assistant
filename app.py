@@ -247,8 +247,12 @@ REGLAS DE NEGOCIO (MUY IMPORTANTES):
 5. CUANDO CATEGORÍA ES "Servicio sin identificar" O ESTÁ VACÍA:
    Ignora la categoría y busca pistas en el TÍTULO y la DESCRIPCIÓN.
    El título suele tener formato "eci#SISTEMA#descripcion" — el SISTEMA es la clave principal:
-   - "openshift", "openshift_pro", "kubernetes", "k8s", "prometheus", "collector", "devops" → grupo = "Devops" (El Corte Inglés, S.A. - Soporte Sistemas Corporativos - Devops)
-   - "elasticsearch", "elasticsearch_pro", "elastic", "kibana", "elk", "Attention" → grupo = "Devops" (también gestionado por Devops en ECI)
+   - REGLA ESPECÍFICA: Si el título contiene "elasticsearch_pro" Y "Discrepancia en el numero de elementos" (o similar sobre caches):
+       * Esto NO va a Devops. Hay que revisar las caches en Kibana: https://kibana.eci.geci/s/coherence-logs/app/discover#/?_g=(filters:!(),refreshInterval:(pause:!f,value:60000),time:(from:now-1h,to:now))&_a=(columns:!(),dataSource:(dataViewId:'7aa95fdd-4d48-54f3-90a9-c466f0af8954',type:dataView),filters:!(),interval:auto,query:(language:lucene,query:'%22Incorrect%20number%20of%20elements%20in%22'),sort:!(!('@timestamp',desc)))
+       * Si las caches están mal → avisar al grupo "Coherence", teléfono: 616550146
+       * grupo_responsable = "Coherence", contacto guardia = "616550146"
+   - "openshift", "openshift_pro", "kubernetes" en el título: puede ser Devops u otro grupo según el contexto. Sin más pistas, usar confianza baja.
+   - No asumir grupos solo por palabras clave genéricas sin contexto claro.
    - "mxcpd", "linux", "CPU", "UNIXOVERALL", "mongod", "mongo", "disk", "space" → grupo de infraestructura Linux/Unix
    - "oracle", "bbdd", "database", "sql", "ORA-" → grupo DBA
    - "kafka", "rabbit", "broker", "WMB", "sterling" → grupo de integración/mensajería
