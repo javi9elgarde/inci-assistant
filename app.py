@@ -185,16 +185,22 @@ def analyze():
     hora_actual = now.strftime("%H:%M")
     dia_semana = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"][now.weekday()]
 
+    # Filtrar solo las filas relevantes de la matriz según la categoría seleccionada
     routing_matrix = load_routing_matrix()
-    knowledge = load_knowledge_base()
+    relevant_rows = []
+    if routing_matrix and cat_operacional:
+        for line in routing_matrix.splitlines():
+            if any(part.lower() in line.lower() for part in [cat_n1, cat_n2, cat_n3] if part):
+                relevant_rows.append(line)
+    elif routing_matrix:
+        # Sin categoría, enviar solo las primeras 80 líneas como muestra
+        relevant_rows = routing_matrix.splitlines()[:80]
 
     docs_context = ""
-    if routing_matrix:
-        docs_context += f"\n\nMATRIZ DE ROUTING (usa esto como referencia principal para asignar grupos):\n{routing_matrix}"
-    if knowledge:
-        docs_context += f"\n\nDOCUMENTACIÓN ADICIONAL:\n{knowledge}"
+    if relevant_rows:
+        docs_context += f"\n\nREGLAS DE ROUTING RELEVANTES (del Excel de categorizaciones):\n" + "\n".join(relevant_rows)
     if not docs_context:
-        docs_context = "\n\n[Sin matriz de routing cargada. Usa conocimiento general.]"
+        docs_context = "\n\n[Sin reglas de routing específicas. Usa criterio general.]"
 
     incidencia_text = f"""TÍTULO: {titulo}
 SERVICIO: {servicio}
