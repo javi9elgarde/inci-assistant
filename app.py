@@ -244,6 +244,15 @@ REGLAS DE NEGOCIO (MUY IMPORTANTES):
    Soporte Customer Experience, Soporte Firefly Checkout, Soporte Cesta-Checkout, Front Cesta-Checkout, y similares de ECI/Accenture/Hiberus relacionados con web ecommerce.
    - Fuera de horario + Alta/Crítica → pasar directamente al subgrupo específico.
    - Resto → pasar a "Run The Business".
+5. CUANDO CATEGORÍA ES "Servicio sin identificar" O ESTÁ VACÍA:
+   Ignora la categoría y busca pistas en el TÍTULO y la DESCRIPCIÓN:
+   - "openshift", "kubernetes", "k8s", "prometheus", "collector", "devops" → grupo = "DevOps / OpenShift"
+   - "elastic", "elasticsearch", "kibana", "ELK" → grupo = "Elastic / Monitorización"
+   - "linux", "CPU", "memoria", "disco", "mongod", "mongo" → grupo de infraestructura Unix/Linux
+   - "oracle", "bbdd", "database", "sql" → grupo DBA
+   - "kafka", "rabbit", "broker", "WMB" → grupo de integración/mensajería
+   - Si el título contiene "InstanceId: XXXX" o "Component: XXXX", ese XXXX indica el sistema afectado
+   - Usa el contexto del título completo para deducir el grupo más apropiado
 
 Responde SIEMPRE en este formato JSON exacto (sin markdown, solo JSON puro):
 {{
